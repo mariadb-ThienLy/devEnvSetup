@@ -1,5 +1,34 @@
 # Dev Setup
 
+- [Overview](#overview)
+- [Setup Git Environment for MaxScale](#setup-git-environment-for-maxscale)
+  - [Merging Flow](#merging-flow)
+  - [Initial Setup](#initial-setup)
+  - [Add ReviewBoard Configuration](#add-reviewboard-configuration)
+    - [Setup ReviewBoard Configuration](#setup-reviewboard-configuration)
+    - [Post Commits for Review](#post-commits-for-review)
+- [Setup Build and Run Scripts](#setup-build-and-run-scripts)
+  - [Clone and Install Scripts](#clone-and-install-scripts)
+- [Building MaxScale and SuperMax](#building-maxscale-and-supermax)
+  - [Prerequisites](#prerequisites)
+  - [Install Dependencies Required to Build MaxScale on Your OS](#install-dependencies-required-to-build-maxscale-on-your-os)
+  - [Build Development Version](#build-development-version)
+  - [Build Specific Versions](#build-specific-versions)
+- [SSL Certificate Setup](#ssl-certificate-setup)
+  - [Install mkcert](#install-mkcert)
+  - [Generate Certificates](#generate-certificates)
+- [MaxScale Configuration](#maxscale-configuration)
+  - [Create Configuration Directory](#create-configuration-directory)
+  - [Configuration Files](#configuration-files)
+    - [maxscale.cnf](#maxscalecnf)
+    - [supermax.cnf](#supermaxcnf)
+- [Docker Environment Setup](#docker-environment-setup)
+  - [Generate Docker Compose Files](#generate-docker-compose-files)
+  - [Start Containers](#start-containers)
+- [Running MaxScale and SuperMax](#running-maxscale-and-supermax)
+  - [Run SuperMax](#run-supermax)
+  - [Run MaxScale](#run-maxscale)
+
 ## Overview
 
 This guide provides instructions for setting up a development environment for MaxScale and SuperMax.
@@ -111,7 +140,7 @@ Create your build directory. The directory name must start with `build`:
 mkdir -p "$HOME/workspace/builds/build_dev" && cd $HOME/workspace/builds/build_dev
 ```
 
-### Install the dependencies required to build MaxScale on your OS
+### Install Dependencies Required to Build MaxScale on Your OS
 
 This usually only needs to be done once, unless new dependencies are added.
 
@@ -254,6 +283,9 @@ admin_ssl_ca=/home/user/.local/share/mkcert/rootCA.pem
 ```
 
 ## Docker Environment Setup
+
+To run a cluster of servers in the local environment, we use `docker-compose`.
+Check out the installation guide [here](./Docker-Installation.md).
 
 ### Generate Docker Compose Files
 
