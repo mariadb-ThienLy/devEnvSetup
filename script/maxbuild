@@ -1,0 +1,355 @@
+#!/bin/bash
+
+source ~/.bashcolors
+export LC_ALL=C
+export CC=/usr/bin/gcc
+export CXX=/usr/bin/g++
+export PATH=$HOME/scripts:$PATH
+export NUM_PROCESSORS=$(cat /proc/cpuinfo | grep processor | wc -l)
+
+function cleanup {
+    color_off
+}
+
+trap cleanup INT TERM EXIT
+
+BUILD_DIR=$PWD
+base=$(basename $BUILD_DIR)
+WARN="The current directory (the build directory) must start with 'build'."
+if  ! [[ $base =~  ^build ]]; then
+    echo $WARN
+    exit 666
+fi
+
+options_file="maxbuild.options"
+
+cmd_line_opts="$@"
+persisted_opts=$(cat $options_file 2>>/dev/null)
+opts_to_use="$persisted_opts"
+
+# if cmd line and persisted differ, use cmd_line_opts and do a clean build
+if [[ -n $cmd_line_opts ]] && [[ -n $persisted_opts ]] && [[ $cmd_line_opts != $persisted_opts ]]; then
+    opts_to_use=$cmd_line_opts
+    clean_build=true
+# If there are no $persisted_opts, but there are cmd_line_opts,
+# same as above: use cmd_line_opts and do a clean build
+elif [[ -n $cmd_line_opts ]] && [[ -z $persisted_opts ]]; then
+    opts_to_use=$cmd_line_opts
+    clean_build=true
+# No opts, clean default build
+elif [[ -z $cmd_line_opts ]] && [[ -z $persisted_opts ]]; then
+    clean_build=true
+    opts_to_use="-d"
+fi
+
+DEFAULT_INSTALL_PREFIX=$HOME/maxscale
+debug=true
+
+function usage {
+echo "Usage: $(basename $0) [OPTIONS]"
+
+echo "  -C,--clang         Use clang"
+echo "  -d,--debug         Debug build (default, minimal)"
+echo "  -k,--kill-opts     Reset persisted_opts (also a way to get back to default build)"
+echo "  -r,--root          Install as root"
+echo "  -F,--full          Full build except system tests, and install (else minimal)"
+echo "  -S,--supermax      Supermax full build"
+echo "  -install-deps,--install-build-deps  Run install_build_deps.sh before building"
+echo "  -i,--install-pre   Install prefix. Defaults to $DEFAULT_INSTALL_PREFIX,"
+echo "                     or with --root defaults to /usr"
+echo '  -s,--source        Source dir. Defaults to .."'
+echo "  -t,--test          Build tests"
+echo "  -T,--systest       Build system-test"
+echo "  -y,--dry-run       Show the cmake command and exit BROKEN"
+echo "  -h,--help          Show this help"
+echo
+if [[ -z $persisted_opts ]]; then
+    echo "  Persisted options: <none>"
+else
+    echo "  Persisted options: $persisted_opts"
+fi
+}
+
+build_filters="-DBUILD_FILTERS=Y"
+build_tests="-DBUILD_TESTS=N"
+build_system_tests="-DBUILD_SYSTEM_TESTS=N"
+build_asan="-DWITH_ASAN=N"
+build_maxctrl="-DBUILD_MAXCTRL=Y"
+build_gui="-DBUILD_GUI=Y"
+
+install_build_deps=false
+
+opts="$(getopt -o CdkrfFSDi:s:tTmyhag -l clang,debug,kill-opts,root,full,supermax,install-pre:,source:,test,systest,dry-run,help --name $0 -- ${opts_to_use})"
+if [[ $? -ne 0 ]]; then
+    usage
+    exit 1
+fi
+
+eval set -- "$opts"
+
+supermax_build=false
+while true
+do
+case "$1" in
+    -k|--kill-opts)
+        if [[ -e $options_file ]]; then
+            rm $options_file
+        fi
+        exit 42
+    ;;
+
+    -C|--clang)
+        export CC=/usr/bin/clang
+        export CXX=/usr/bin/clang++
+    ;;
+
+    -d|--debug)
+        debug=true
+        build_asan="-DWITH_ASAN=Y"
+    ;;
+
+    -install-deps|--install-build-deps)
+        install_build_deps=true
+    ;;
+
+    -r|--root)
+        SUDO=sudo
+        root_install=true
+    ;;
+
+    -F|--full)
+        full=true
+        build_filters="-DBUILD_FILTERS=Y"
+        build_experimental="-DTARGET_COMPONENT=all"
+        build_tests="-DBUILD_TESTS=N"
+        build_system_tests="-DBUILD_SYSTEM_TESTS=N"
+        build_asan="-DWITH_ASAN=N"
+        build_maxctrl="-DBUILD_MAXCTRL=Y"
+        build_gui="-DBUILD_GUI=Y"
+    ;;
+
+    -S|--supermax_)
+        supermax_build=true
+        build_filters="-DBUILD_FILTERS=N"
+        build_experimental="-DTARGET_COMPONENT=all"
+        build_tests="-DBUILD_TESTS=N"
+        build_system_tests="-DBUILD_SYSTEM_TESTS=N"
+        build_asan="-DWITH_ASAN=N"
+        build_maxctrl="-DBUILD_MAXCTRL=N"
+        build_gui="-DBUILD_GUI=Y"
+    ;;
+
+    -i|--install-pre)
+        INSTALL_PREFIX=$2
+        shift
+    ;;
+
+    -s|--source)
+        SOURCE_DIR=$2
+        shift
+    ;;
+
+    -t|--test)
+        build_tests="-DBUILD_TESTS=Y"
+    ;;
+
+    -T|--systest)
+        build_system_tests="-DBUILD_SYSTEM_TESTS=Y \
+                            -DMAXSCALE_LITE=Y \
+                            -DHAVE_MYSQLTEST=Y \
+                            -DHAVE_PHP=Y \
+                           "
+    ;;
+
+    -y|--dry-run)
+        # this was handled before the loop, because it can change the options
+        dry_run=true
+    ;;
+
+    -h|--help)
+        usage
+        exit 0
+    ;;
+
+    --)
+        shift
+        break
+    ;;
+
+    *)
+        echo "getopt and case statement mismatch on option $1"
+        exit 1
+    ;;
+esac
+shift
+done
+shift
+
+if ! [[ -z $1 ]]; then
+    usage
+    exit 0
+fi
+
+if [[ -z $INSTALL_PREFIX ]]; then
+    if [[ $root_install == true ]]; then
+        INSTALL_PREFIX=/usr
+    else
+        INSTALL_PREFIX=$DEFAULT_INSTALL_PREFIX
+    fi
+fi
+
+if [[ -z $SOURCE_DIR ]]; then
+    SOURCE_DIR=".."
+fi
+
+# Run the dependency installation script if the flag is set
+if [[ $install_build_deps == true ]]; then
+    deps_script="$SOURCE_DIR/BUILD/install_build_deps.sh"
+    if [[ -x $deps_script ]]; then
+        echo "Running dependency installation script: $deps_script"
+        $deps_script
+        if [[ $? -ne 0 ]]; then
+            echo "Dependency installation failed."
+            exit 1
+        fi
+    else
+        echo "Dependency installation script not found or not executable: $deps_script"
+        exit 1
+    fi
+fi
+
+CMAKE_CMD="
+    cmake $SOURCE_DIR \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+        -DWITH_SCRIPTS=N \
+        -DWITH_GSSAPI=F \
+        -DSTATIC_EMBEDDED=N \
+        "
+if [[ $supermax_build == true ]]; then
+CMAKE_CMD="$CMAKE_CMD \
+    -DMAXSCALE_SUPERMAX=Y \
+    -DBUILD_CDC=N \
+    -DBUILD_KAFKACDC=N \
+    -DBUILD_KAFKAIMPORTER=N \
+    -DBUILD_LUAFILTER=N \
+    -DBUILD_MIRROR=N \
+    -DBUILD_BINLOG=N \
+    -DBUILD_RABBITMQ=N \
+    -DBUILD_STORAGE_MEMCACHED=N \
+    -DBUILD_STORAGE_REDIS=N \
+    -DBUILD_TOOLS=Y \
+    -DBUILD_NOSQL=N \
+    -DWITH_LTO=N \
+    "
+elif [[ $full == true ]]; then
+CMAKE_CMD="$CMAKE_CMD \
+    -DBUILD_CDC=Y \
+    -DBUILD_KAFKACDC=Y \
+    -DBUILD_KAFKAIMPORTER=Y \
+    -DBUILD_LUAFILTER=Y \
+    -DBUILD_MIRROR=Y \
+    -DBUILD_BINLOG=Y \
+    -DBUILD_RABBITMQ=Y \
+    -DBUILD_STORAGE_MEMCACHED=Y \
+    -DBUILD_STORAGE_REDIS=Y \
+    -DBUILD_TOOLS=Y \
+    -DBUILD_NOSQL=Y \
+    -DWITH_LTO=N \
+    "
+else
+CMAKE_CMD="$CMAKE_CMD \
+    -DBUILD_CDC=N \
+    -DBUILD_KAFKACDC=N \
+    -DBUILD_KAFKAIMPORTER=N \
+    -DBUILD_LUAFILTER=N \
+    -DBUILD_MIRROR=N \
+    -DBUILD_BINLOG=Y \
+    -DBUILD_RABBITMQ=N \
+    -DBUILD_STORAGE_MEMCACHED=N \
+    -DBUILD_STORAGE_REDIS=N \
+    -DBUILD_TOOLS=N \
+    -DBUILD_NOSQL=N \
+    -DWITH_LTO=N \
+   "
+fi
+
+CMAKE_CMD="$CMAKE_CMD $build_filters $build_experimental $build_tests $build_system_tests $build_maxctrl $build_asan $build_gui"
+
+if [[ $root_install != true ]]; then
+        CMAKE_CMD="$CMAKE_CMD \
+        -DMAXSCALE_LOGDIR=$INSTALL_PREFIX/var \
+        -DMAXSCALE_VARDIR=$INSTALL_PREFIX/var \
+        -DMAXSCALE_CONFDIR=$INSTALL_PREFIX/etc \
+        -DDEFAULT_MODULE_CONFIGDIR=$INSTALL_PREFIX/ \
+        -DDEFAULT_PIDDIR=$INSTALL_PREFIX/var \
+        -DDEFAULT_CONFIG_SUBPATH=$INSTALL_PREFIX/etc \
+        -DSUPERMAX_DEFAULT_PIDDIR=$INSTALL_PREFIX/var \
+        -DSUPERMAX_DEFAULT_CONFIG_SUBPATH=$INSTALL_PREFIX \
+        -DSUPERMAX_DEFAULT_SYSTEMD_CONFIGDIR=$INSTALL_PREFIX/etc \
+        -DDEFAULT_SYSTEMD_CONFIGDIR=$INSTALL_PREFIX/etc/systemd/system/maxscale.service.d"
+fi
+
+
+if [[ $debug == true ]]; then
+    CMAKE_CMD="${CMAKE_CMD} -DCMAKE_BUILD_TYPE=Debug"
+else
+    CMAKE_CMD="${CMAKE_CMD} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+fi
+
+if [[ $dry_run == true ]]; then
+    for token in $CMAKE_CMD; do
+        echo "$token \\"
+    done
+
+    exit 0
+fi
+
+if  [[ ! -e CMakeCache.txt ]] || [[ $clean_build ]]; then
+    test $(stat --format '%U' $BUILD_DIR) == $USER
+    ownes_dir=$?
+
+    if [[ -z $BUILD_DIR ]] || (( $ownes_dir != 0 )); then
+        echo "Something is wrong. Refused to run: rm -rf $BUILD_DIR/*"
+        if (( $ownes_dir != 0 )); then
+            echo "You do not own $BUILD_DIR"
+        fi
+        exit 666
+    fi
+
+    echo "Clean build with options: $opts_to_use"
+    sleep 3
+
+    rm -rf $BUILD_DIR/*
+    $CMAKE_CMD
+fi
+
+echo "$opts_to_use" > $options_file
+
+start_time=$(date +%s.%N)
+
+make -j $NUM_PROCESSORS
+
+if [[ $? -ne 0 ]]; then
+    exit 13
+fi
+
+end_time=`date +%s.%N`
+compile_time=$(echo "scale=4;$end_time - $start_time" | bc -l)
+
+
+if [ -L $HOME/maxscale ]; then
+    echo "$HOME/maxscale is a symlink, deleting"
+    rm $HOME/maxscale
+    sleep 3
+fi
+
+$SUDO cmake --install .
+
+echo -e $BICyan
+end_time=`date +%s.%N`
+runtime=$(echo "$end_time - $start_time" | bc -l)
+printf "%s %.2fs\n" "compile time" "$compile_time"
+printf "%s %.2fs\n" "total   time" "$runtime"
+color_off
+
+exit 0

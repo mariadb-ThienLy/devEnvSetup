@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if [[ -z $2 ]]; then
+    echo "usage: $(basename $0) BUILD_DIR CONFIG_DIR [-S] [-u]"
+    echo "       The actual config dir will be $HOME/workspace/maxconfig/\$CONFIG_DIR"
+    echo "       Use -S to run supermax instead of maxscale"
+    echo "       Use -u to run with --user=root"
+    exit 42
+else
+    config_dir=/home/$USER/workspace/maxconfig/$2
+fi
+
+cd /home/$USER/workspace/$1/bin
+rm core &> /dev/null
+
+# Determine if running supermax or maxscale
+is_supermax=false
+run_as_root=false
+
+# Parse command line options
+for arg in "$@"; do
+    case $arg in
+        -S)
+            is_supermax=true
+            ;;
+        -u)
+            run_as_root=true
+            ;;
+    esac
+done
+
+# Set variables based on mode
+if [[ $is_supermax == true ]]; then
+    executable="supermax"
+    log_file="../var/log/supermax/supermax.log"
+else
+    executable="maxscale"
+    log_file="../var/log/maxscale/maxscale.log"
+fi
+
+# Build command arguments
+cmd_args="-d --configdir=$config_dir"
+if [[ $run_as_root == true ]]; then
+    cmd_args="$cmd_args --user=root"
+fi
+
+# Remove log file and run executable
+rm $log_file &> /dev/null
+./$executable --version
+./$executable $cmd_args
