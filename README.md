@@ -71,7 +71,15 @@ cp .bashcolors $HOME
 Create your build directory. The directory name must start with `build`:
 
 ```bash
-mkdir -p "$HOME/workspace/build_dev" && cd $HOME/workspace/build_dev
+mkdir -p "$HOME/workspace/builds/build_dev" && cd $HOME/workspace/builds/build_dev
+```
+
+### Run install_build_deps.sh before building
+
+This usually only needs to be done once, unless new dependencies are added.
+
+```bash
+cd $HOME/workspace/MaxScale/BUILD && ./install_build_deps.sh
 ```
 
 ### Build Development Version
@@ -79,7 +87,7 @@ mkdir -p "$HOME/workspace/build_dev" && cd $HOME/workspace/build_dev
 Build both MaxScale and SuperMax (for `p_develop` branch only):
 
 ```bash
-maxbuild -S -i $HOME/workspace/maxscale-dev -s ../MaxScale
+maxbuild -S -i $HOME/workspace/maxscale-dev -s $HOME/workspace/MaxScale
 ```
 
 ### Build Specific Versions
@@ -95,7 +103,7 @@ cd $HOME/workspace/MaxScale && git checkout --track origin/24.02.6
 2. Build the specific version:
 
 ```bash
-mkdir -p "$HOME/workspace/build_24.02.6" && cd $HOME/workspace/build_24.02.6 && maxbuild -F -i $HOME/workspace/maxscale-24.02.6 -s ../MaxScale
+mkdir -p "$HOME/workspace/build_24.02.6" && cd $HOME/workspace/build_24.02.6 && maxbuild -F -i $HOME/workspace/maxscale-24.02.6 -s $HOME/workspace/MaxScale
 ```
 
 ## SSL Certificate Setup
