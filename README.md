@@ -103,7 +103,7 @@ cd $HOME/workspace/MaxScale && git checkout --track origin/24.02.6
 2. Build the specific version:
 
 ```bash
-mkdir -p "$HOME/workspace/build_24.02.6" && cd $HOME/workspace/build_24.02.6 && maxbuild -F -i $HOME/workspace/maxscale-24.02.6 -s $HOME/workspace/MaxScale
+mkdir -p "$HOME/workspace/builds/build_24.02.6" && cd $HOME/workspace/builds/build_24.02.6 && maxbuild -F -i $HOME/workspace/maxscale-24.02.6 -s $HOME/workspace/MaxScale
 ```
 
 ## SSL Certificate Setup
