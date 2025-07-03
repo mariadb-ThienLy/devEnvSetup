@@ -4,7 +4,7 @@
 
 This guide provides instructions for setting up a development environment for MaxScale and SuperMax.
 
-## Setup GIT Environment for MaxScale
+## Setup Git Environment for MaxScale
 
 The current development branch is in this repository:  
 https://github.com/mariadb-corporation/MaxScalePriv
@@ -35,6 +35,43 @@ mkdir -p "$HOME/workspace" && cd $HOME/workspace && git clone git@github.com:mar
 ```bash
 cd MaxScale && git remote add p_origin git@github.com:mariadb-corporation/MaxScalePriv.git
 ```
+
+### Add ReviewBoard Configuration
+
+We are using [RBCommons](https://rbcommons.com/s/MariaDB/) as a way to review our commits.
+
+The workflow with RBCommons is as follows:
+
+1. Create a commit in your local repository.
+2. Post that commit to RBCommons and wait for comments.
+3. If there are issues to address, modify the latest commit with `git commit --amend` and go back to step 2.
+4. When everything is approved, push the change from your local repository to the GitHub repository.
+
+**Installation guide:** https://www.reviewboard.org/downloads/rbtools/
+
+#### Setup ReviewBoard Configuration
+
+Copy the `.reviewboardrc` file as a local ReviewBoard configuration to the MaxScale repository:
+
+```bash
+cp .reviewboardrc $HOME/workspace/MaxScale
+```
+
+#### Post Commits for Review
+
+To post your latest commit from the local MaxScalePriv repository for review:
+
+```bash
+rbt post --repository=MaxScalePriv --tracking-branch p_origin/p_develop --branch p_develop HEAD
+```
+
+To add your latest commit to an existing review request:
+
+```bash
+rbt post --repository=MaxScalePriv --tracking-branch p_origin/p_develop --branch p_develop -r 25795 HEAD
+```
+
+Where `25795` is the review request number (e.g., https://rbcommons.com/s/MariaDB/r/25795/).
 
 ## Setup Build and Run Scripts
 
@@ -74,7 +111,7 @@ Create your build directory. The directory name must start with `build`:
 mkdir -p "$HOME/workspace/builds/build_dev" && cd $HOME/workspace/builds/build_dev
 ```
 
-### Run install_build_deps.sh before building
+### Install the dependencies required to build MaxScale on your OS
 
 This usually only needs to be done once, unless new dependencies are added.
 
@@ -148,7 +185,7 @@ admin_oidc_url=https://127.0.0.1:8990
 admin_oidc_client_id=admin
 admin_oidc_client_secret=mariadb
 admin_oidc_flow=auto
-#Replace user with your user dir
+# Replace user with your user directory
 admin_ssl_cert=/home/user/cert/cert.pem
 admin_ssl_key=/home/user/cert/key.pem
 admin_ssl_ca=/home/user/.local/share/mkcert/rootCA.pem
@@ -165,9 +202,9 @@ user=maxscale
 [Read-Only-Service]
 type=service
 router=readconnroute
-servers = server_0, server_1, server_2
-user = maxscale
-password = mariadb
+servers=server_0,server_1,server_2
+user=maxscale
+password=mariadb
 
 [Read-Only-Listener]
 type=listener
@@ -176,11 +213,11 @@ protocol=mariadbprotocol
 port=9908
 
 [Read-Write-Service]
-type = service
-router = readwritesplit
-servers = server_0
-user = maxscale
-password = mariadb
+type=service
+router=readwritesplit
+servers=server_0
+user=maxscale
+password=mariadb
 
 [Read-Write-Listener]
 type=listener
@@ -189,19 +226,19 @@ protocol=mariadbprotocol
 port=9907
 
 [server_0]
-type = server
-address = 127.0.0.1
-port = 4000
+type=server
+address=127.0.0.1
+port=4000
 
 [server_1]
-type = server
-address = 127.0.0.1
-port = 4001
+type=server
+address=127.0.0.1
+port=4001
 
 [server_2]
-type = server
-address = 127.0.0.1
-port = 4002
+type=server
+address=127.0.0.1
+port=4002
 ```
 
 #### supermax.cnf
@@ -210,7 +247,7 @@ port = 4002
 [supermax]
 admin_host=127.0.0.1
 admin_port=8990
-#Replace user with your user dir
+# Replace user with your user directory
 admin_ssl_cert=/home/user/cert/cert.pem
 admin_ssl_key=/home/user/cert/key.pem
 admin_ssl_ca=/home/user/.local/share/mkcert/rootCA.pem
