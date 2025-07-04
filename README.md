@@ -65,6 +65,18 @@ mkdir -p "$HOME/workspace" && cd $HOME/workspace && git clone git@github.com:mar
 cd MaxScale && git remote add p_origin git@github.com:mariadb-corporation/MaxScalePriv.git
 ```
 
+3. Add a pre-push script:
+
+This helps prevent pushing the `p_develop` branch to https://github.com/mariadb-corporation/MaxScale
+
+```bash
+cp pre-push $HOME/workspace/MaxScale.git/hooks
+```
+
+```bash
+cd $HOME/workspace/MaxScale.git/hooks && chmod +x pre-push
+```
+
 ### Add ReviewBoard Configuration
 
 We are using [RBCommons](https://rbcommons.com/s/MariaDB/) as a way to review our commits.
