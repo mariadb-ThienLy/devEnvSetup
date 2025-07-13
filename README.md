@@ -164,7 +164,6 @@ $HOME/workspace/MaxScale/BUILD/./install_build_deps.sh
 Build both MaxScale and SuperMax (for `p_develop` branch only):
 
 
-
 ```bash
 cd $HOME/workspace/Maxscale && git checkout -b p_develop p_origin/p_develop
 ```
@@ -232,8 +231,8 @@ admin_oidc_client_id=admin
 admin_oidc_client_secret=mariadb
 admin_oidc_flow=auto
 # Replace user with your user directory
-admin_ssl_cert=/home/user/cert/cert.pem
-admin_ssl_key=/home/user/cert/key.pem
+admin_ssl_cert=/home/user/workspace/cert/cert.pem
+admin_ssl_key=/home/user/workspace/cert/key.pem
 admin_ssl_ca=/home/user/.local/share/mkcert/rootCA.pem
 
 [Monitor]
@@ -294,8 +293,8 @@ port=4002
 admin_host=127.0.0.1
 admin_port=8990
 # Replace user with your user directory
-admin_ssl_cert=/home/user/cert/cert.pem
-admin_ssl_key=/home/user/cert/key.pem
+admin_ssl_cert=/home/user/workspace/cert/cert.pem
+admin_ssl_key=/home/user/workspace/cert/key.pem
 admin_ssl_ca=/home/user/.local/share/mkcert/rootCA.pem
 ```
 
