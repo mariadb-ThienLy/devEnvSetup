@@ -78,7 +78,7 @@ cp $HOME/workspace/devEnvSetup/pre-push $HOME/workspace/MaxScale/.git/hooks
 ```
 
 ```bash
-cd $HOME/workspace/MaxScale.git/hooks && chmod +x pre-push
+cd $HOME/workspace/MaxScale/.git/hooks && chmod +x pre-push
 ```
 
 ### Add ReviewBoard Configuration
