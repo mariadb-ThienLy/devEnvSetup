@@ -67,11 +67,12 @@ cd MaxScale && git remote add p_origin git@github.com:mariadb-corporation/MaxSca
 
 3. Add a pre-push script:
 First clone this devEnvSetup repository.
+
 ```bash
-cd $HOME/workspace/ && git clone git@github.com:mariadb-ThienLy/devEnvSetup.git
+cd $HOME/workspace && git clone git@github.com:mariadb-ThienLy/devEnvSetup.git && cd devEnvSetup
 ```
 
-This helps prevent pushing the `p_develop` branch to https://github.com/mariadb-corporation/MaxScale
+This pre-push script helps prevent pushing the `p_develop` branch to https://github.com/mariadb-corporation/MaxScale
 
 ```bash
 cp $HOME/workspace/devEnvSetup/pre-push $HOME/workspace/MaxScale/.git/hooks
@@ -99,7 +100,7 @@ The workflow with RBCommons is as follows:
 Copy the `.reviewboardrc` file as a local ReviewBoard configuration to the MaxScale repository:
 
 ```bash
-cp .reviewboardrc $HOME/workspace/MaxScale
+cp $HOME/workspace/devEnvSetup/.reviewboardrc $HOME/workspace/MaxScale
 ```
 
 #### Post Commits for Review
@@ -122,25 +123,19 @@ Where `25795` is the review request number (e.g., https://rbcommons.com/s/MariaD
 
 ### Clone and Install Scripts
 
-1. Clone this repository:
+1. Copy scripts to workspace:
 
 ```bash
-cd $HOME/workspace && git clone git@github.com:mariadb-ThienLy/devEnvSetup.git && cd devEnvSetup
+cd devEnvSetup && cp -r script $HOME/workspace && chmod -R +x $HOME/workspace/script
 ```
 
-2. Copy scripts to workspace:
-
-```bash
-cp -r script $HOME/workspace && chmod -R +x $HOME/workspace/script
-```
-
-3. Add scripts to PATH:
+2. Add scripts to PATH:
 
 ```bash
 echo 'PATH=$HOME/workspace/script:$PATH' >> ~/.bashrc && source ~/.bashrc
 ```
 
-4. Copy required configuration file:
+3. Copy required configuration file:
 
 ```bash
 cp .bashcolors $HOME
