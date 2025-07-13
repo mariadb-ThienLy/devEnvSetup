@@ -66,11 +66,15 @@ cd MaxScale && git remote add p_origin git@github.com:mariadb-corporation/MaxSca
 ```
 
 3. Add a pre-push script:
+First clone this devEnvSetup repository.
+```bash
+cd $HOME/workspace/ && git clone git@github.com:mariadb-ThienLy/devEnvSetup.git
+```
 
 This helps prevent pushing the `p_develop` branch to https://github.com/mariadb-corporation/MaxScale
 
 ```bash
-cp pre-push $HOME/workspace/MaxScale.git/hooks
+cp $HOME/workspace/devEnvSetup/pre-push $HOME/workspace/MaxScale/.git/hooks
 ```
 
 ```bash
