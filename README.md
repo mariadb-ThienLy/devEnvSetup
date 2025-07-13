@@ -156,15 +156,21 @@ mkdir -p "$HOME/workspace/builds/build_dev" && cd $HOME/workspace/builds/build_d
 This usually only needs to be done once, unless new dependencies are added.
 
 ```bash
-cd $HOME/workspace/MaxScale/BUILD && ./install_build_deps.sh
+$HOME/workspace/MaxScale/BUILD/./install_build_deps.sh
 ```
 
 ### Build Development Version
 
 Build both MaxScale and SuperMax (for `p_develop` branch only):
 
+
+
 ```bash
-maxbuild -S -i $HOME/workspace/maxscale-dev -s $HOME/workspace/MaxScale
+cd $HOME/workspace/Maxscale && git checkout -b p_develop p_origin/p_develop
+```
+
+```bash
+cd $HOME/workspace/builds/build_dev && maxbuild -S -i $HOME/workspace/maxscale-dev -s $HOME/workspace/MaxScale
 ```
 
 ### Build Specific Versions
